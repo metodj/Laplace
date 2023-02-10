@@ -17,10 +17,10 @@ def download_pretrained_model():
         urllib.request.urlretrieve('https://nc.mlcloud.uni-tuebingen.de/index.php/s/2PBDYDsiotN76mq/download', './temp/CIFAR10_plain.pt')
 
 
-def plot_regression(X_train, y_train, X_test, f_test, y_std, plot=True, 
-                    file_name='regression_example', la_type='full'):
+def plot_regression(X_train, y_train, X_test, f_test, f_test_gp, y_std, plot=True, 
+                    file_name='regression_example', la_type='full', figsize=(4.5, 2.8)):
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True,
-                                figsize=(4.5, 2.8))
+                                figsize=figsize)
     ax1.set_title('MAP')
     ax1.scatter(X_train.flatten(), y_train.flatten(), alpha=0.3, color='tab:orange')
     ax1.plot(X_test, f_test, color='black', label='$f_{MAP}$')
@@ -28,8 +28,8 @@ def plot_regression(X_train, y_train, X_test, f_test, y_std, plot=True,
 
     ax2.set_title(f'LA-{la_type}')
     ax2.scatter(X_train.flatten(), y_train.flatten(), alpha=0.3, color='tab:orange')
-    ax2.plot(X_test, f_test, label='$\mathbb{E}[f]$')
-    ax2.fill_between(X_test, f_test-y_std*2, f_test+y_std*2, 
+    ax2.plot(X_test, f_test_gp, label='$\mathbb{E}[f]$')
+    ax2.fill_between(X_test, f_test_gp-y_std*2, f_test_gp+y_std*2, 
                      alpha=0.3, color='tab:blue', label='$2\sqrt{\mathbb{V}\,[y]}$')
     ax2.legend()
     ax1.set_ylim([-4, 6])
@@ -42,7 +42,7 @@ def plot_regression(X_train, y_train, X_test, f_test, y_std, plot=True,
     if plot:
         plt.show()
     else:
-        plt.savefig(f'docs/{file_name}.png')
+        plt.savefig(f'../docs/{file_name}.png')
 
 
 def predict(dataloader, model, laplace=False, la_type='kron'):

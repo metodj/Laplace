@@ -1220,6 +1220,9 @@ class FunctionalLaplace(BaseLaplace):
             return L_diag
 
     def _build_Sigma_inv(self):
+        """
+        computes Cholesky decomposition (and not the inverse!) of (K_MM + L_MM_inv)
+        """
         if self.diagonal_kernel:
             self.Sigma_inv = [torch.linalg.cholesky(self.gp_kernel_prior_variance * self.K_MM[c] + torch.diag(torch.nan_to_num(1. / (self._H_factor * lambda_c), posinf=10.))) for c, lambda_c in
                     enumerate(self.L)]
@@ -1325,7 +1328,7 @@ class FunctionalLaplace(BaseLaplace):
     def gp_kernel_prior_variance(self):
         return self._prior_factor_sod / self.prior_precision
 
-    def gp_posterior(self, X_star):
+    def gp_posterior(self, X_star, return_gp_mean=False):
         """
         \\(q(f_* | x_*, \mathcal{D}) = \mathcal{N} (f_*, \Sigma_*) \\), where
         \\(\Sigma_* =  K_{**} - K_{*M} (K_{MM}+ L_{MM}^{-1})^{-1} K_{M*}\\)
@@ -1347,10 +1350,31 @@ class FunctionalLaplace(BaseLaplace):
 
         """
         Js, f_mu = self._jacobians(X_star)
-        f_var = self._gp_posterior_variance(Js, X_star)
+        f_var, K_M_star = self._gp_posterior_variance(Js, X_star)
         if self.diagonal_kernel:
             f_var = torch.diag_embed(f_var)
+        
+        if return_gp_mean and self.likelihood == 'regression':
+            f_mu_gp = self._gp_regression_posterior_mean(f_mu, Js, K_M_star)
+            return f_mu.detach(), f_var.detach(), f_mu_gp.detach()
         return f_mu.detach(), f_var.detach()
+
+    def _gp_regression_posterior_mean(self, f_mu, Js_star, K_M_star):
+
+        assert self.n_outputs == 1 and self.diagonal_kernel == False, "preliminary/toy implementation"
+
+        Sigma_inv = torch.inverse(self.Sigma_inv)
+        Sigma_inv = torch.matmul(Sigma_inv.T, Sigma_inv)
+
+        m_x_star = - self._mean_scatter_term_batch(Js_star, f_mu, y=torch.zeros(f_mu.shape))
+
+        # y = torch.cat([y_batch.to(self._device) for _, y_batch in self.train_loader], dim=0)
+
+        f = torch.matmul(torch.transpose(K_M_star, 1, 3), torch.matmul(Sigma_inv, self.mu)) 
+        f = f.squeeze(-1).squeeze(-1)
+        f = f + m_x_star
+
+        return f
 
     def _gp_posterior_variance(self, Js_star, X_star):
         """
@@ -1370,11 +1394,12 @@ class FunctionalLaplace(BaseLaplace):
             K_M_star_batch = self.gp_kernel_prior_variance * self._kernel_batch_star(Js_star, X_batch.to(self._device))
             K_M_star.append(K_M_star_batch)
 
+        K_M_star = torch.cat(K_M_star, dim=1)
         f_var = K_star - self._build_K_star_M(K_M_star)
-        return f_var
+        return f_var, K_M_star
 
     def _build_K_star_M(self, K_M_star):
-        K_M_star = torch.cat(K_M_star, dim=1)
+        
         if self.diagonal_kernel:
             prods = []
             for c in range(self.n_outputs):

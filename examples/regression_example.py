@@ -8,7 +8,7 @@ from helper.dataloaders import get_sinusoid_example
 from helper.util import plot_regression
 
 # specify Laplace approximation type: full, kron, gp...
-la_type = 'full'
+la_type = 'gp'
 
 n_epochs = 1000
 torch.manual_seed(711)
@@ -57,8 +57,8 @@ print(f'sigma={la.sigma_noise.item():.3f} | ',
       f'prior precision={la.prior_precision.item():.3f} | ',
       f'MAE: {np.abs(x - f_mu).mean():.3f}')
 
-plot_regression(X_train, y_train, x, f_mu, pred_std,
-                file_name='regression_example', plot=True, la_type=la_type)
+plot_regression(X_train, y_train, x, f_mu, f_mu, pred_std,
+                file_name='regression_example', plot=False, la_type=la_type)
 
 # alternatively, optimize parameters and hyperparameters of the prior jointly
 model = get_model()
@@ -77,5 +77,5 @@ print(f'sigma={la.sigma_noise.item():.3f} | ',
       f'prior precision={la.prior_precision.numpy()[0]:.3f} | ',
       f'MAE: {np.abs(x - f_mu).mean():.3f}')
 
-plot_regression(X_train, y_train, x, f_mu, pred_std,
-                file_name='regression_example_online', plot=True, la_type=la_type + " (online)")
+plot_regression(X_train, y_train, x, f_mu, f_mu, pred_std,
+                file_name='regression_example_online', plot=False, la_type=la_type + " (online)")
