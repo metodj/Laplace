@@ -17,7 +17,7 @@ torch.backends.cudnn.benchmark = True
 assert torch.cuda.is_available()
 
 DATASET = 'FMNIST'
-BATCH_SIZE = 128
+BATCH_SIZE = 100 
 ds_train, ds_test = get_dataset(DATASET, False, 'cuda')
 train_loader = DataLoader(ds_train, batch_size=BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(ds_test, batch_size=BATCH_SIZE, shuffle=False)

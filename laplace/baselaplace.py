@@ -1347,6 +1347,7 @@ class FunctionalLaplace(BaseLaplace):
 
         """
         Js, f_mu = self._jacobians(X_star)
+        print(Js.shape)
         f_var = self._gp_posterior_variance(Js, X_star)
         if self.diagonal_kernel:
             f_var = torch.diag_embed(f_var)
@@ -1363,7 +1364,7 @@ class FunctionalLaplace(BaseLaplace):
         X_star : torch.Tensor
             test data points \\(X \in \mathbb{R}^{N_{test} \\times C} \\)
         """
-        K_star = self.gp_kernel_prior_variance * self._kernel_star(Js_star, X_star)
+        K_star = self.gp_kernel_prior_variance * self._kernel_star(Js_star)
 
         K_M_star = []
         for X_batch, _ in self.train_loader:
@@ -1501,7 +1502,7 @@ class FunctionalLaplace(BaseLaplace):
         del jacobians_2
         return kernel
 
-    def _kernel_star(self, jacobians, batch):
+    def _kernel_star(self, jacobians):
         """
         Compute K_star_star kernel matrix.
 
@@ -1516,11 +1517,15 @@ class FunctionalLaplace(BaseLaplace):
             K_star with shape (b, C, C)
 
         """
-        jacobians_2, _ = self._jacobians(batch)
+        # jacobians_2, _ = self._jacobians(batch)
+        # if self.diagonal_kernel:
+        #     kernel = torch.einsum('bcp,bcp->bc', jacobians, jacobians_2)
+        # else:
+        #     kernel = torch.einsum('bcp,bep->bce', jacobians, jacobians_2)
         if self.diagonal_kernel:
-            kernel = torch.einsum('bcp,bcp->bc', jacobians, jacobians_2)
+            kernel = torch.einsum('bcp,bcp->bc', jacobians, jacobians)
         else:
-            kernel = torch.einsum('bcp,bep->bce', jacobians, jacobians_2)
+            kernel = torch.einsum('bcp,bep->bce', jacobians, jacobians)
         return kernel
 
     def _kernel_batch_star(self, jacobians, batch):
