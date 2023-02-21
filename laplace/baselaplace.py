@@ -1183,15 +1183,15 @@ class FunctionalLaplace(BaseLaplace):
 
     def _init_K_MM(self):
         if self.diagonal_kernel:
-            self.K_MM = [torch.zeros(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
+            self.K_MM = [torch.empty(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
         else:
-            self.K_MM = torch.zeros(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
+            self.K_MM = torch.empty(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
 
     def _init_Sigma_inv(self):
         if self.diagonal_kernel:
-            self.Sigma_inv = [torch.zeros(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
+            self.Sigma_inv = [torch.empty(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
         else:
-            self.Sigma_inv = torch.zeros(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
+            self.Sigma_inv = torch.empty(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
 
     def _curv_closure(self, X, y):
         return self.backend.gp_quantities(X, y)
@@ -1369,6 +1369,7 @@ class FunctionalLaplace(BaseLaplace):
         for X_batch, _ in self.train_loader:
             K_M_star_batch = self.gp_kernel_prior_variance * self._kernel_batch_star(Js_star, X_batch.to(self._device))
             K_M_star.append(K_M_star_batch)
+            del X_batch
 
         f_var = K_star - self._build_K_star_M(K_M_star)
         return f_var
@@ -1495,10 +1496,9 @@ class FunctionalLaplace(BaseLaplace):
         jacobians_2, _ = self._jacobians(batch)
         P = jacobians.shape[-1]  # nr model params
         if self.diagonal_kernel:
-            kernel = []
-            for c in range(self.n_outputs):  # more memory efficient implementation
-                kernel.append(torch.einsum('bp,ep->be', jacobians[:, c, :], jacobians_2[:, c, :]))
-            kernel = torch.stack(kernel, dim=2)
+            kernel = torch.empty((jacobians.shape[0], jacobians_2.shape[0], self.n_outputs), device=jacobians.device)
+            for c in range(self.n_outputs):
+                kernel[:, :, c] = torch.einsum('bp,ep->be', jacobians[:, c, :], jacobians_2[:, c, :])
         else:
             kernel = torch.einsum('ap,bp->ab', jacobians.reshape(-1, P), jacobians_2.reshape(-1, P))
         del jacobians_2
@@ -1519,10 +1519,9 @@ class FunctionalLaplace(BaseLaplace):
 
         """
         if self.diagonal_kernel:
-            kernel = []
+            kernel = torch.empty((jacobians.shape[0], self.n_outputs), device=jacobians.device)
             for c in range(self.n_outputs):
-                kernel.append(torch.norm(jacobians[:, c, :], dim=1) ** 2)  # TODO: double check implementation
-            kernel = torch.stack(kernel, dim=1)
+                kernel[:, c] = torch.norm(jacobians[:, c, :], dim=1) ** 2
         else:
             kernel = torch.einsum('bcp,bep->bce', jacobians, jacobians)
         return kernel
@@ -1543,10 +1542,9 @@ class FunctionalLaplace(BaseLaplace):
         """
         jacobians_2, _ = self._jacobians(batch)
         if self.diagonal_kernel:
-            kernel = []
+            kernel = torch.empty((jacobians.shape[0], jacobians_2.shape[0], self.n_outputs), device=jacobians.device)
             for c in range(self.n_outputs):
-                kernel.append(torch.einsum('bp,ep->be', jacobians[:, c, :], jacobians_2[:, c, :]))
-            kernel = torch.stack(kernel, dim=2)
+                kernel[:, :, c] = torch.einsum('bp,ep->be', jacobians[:, c, :], jacobians_2[:, c, :])
         else:
             kernel = torch.einsum('bcp,dep->bdce', jacobians, jacobians_2)
         return kernel
