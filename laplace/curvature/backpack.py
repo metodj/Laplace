@@ -88,10 +88,6 @@ class BackPackInterface(CurvatureInterface):
             Gs = Gs[:, self.subnetwork_indices]
         return Gs, loss
 
-    def _get_nr_model_params(model):
-        model_parameters = filter(lambda p: p.requires_grad, model.parameters())
-        return sum([np.prod(p.size()) for p in model_parameters])
-
 
 class BackPackGGN(BackPackInterface, GGNInterface):
     """Implementation of the `GGNInterface` using Backpack.
