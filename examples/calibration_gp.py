@@ -41,7 +41,7 @@ if __name__ == "__main__":
             for OPTIMIZE_TYPE in ['marglik']:
                 torch.set_default_dtype(DEFAULT_TYPE)
 
-                train_loader, test_loader, ds_train = load_data(REPO, DATASET)
+                train_loader, test_loader, ds_train = load_data(REPO, DATASET, b_train=256, b_test=128)
                 model, prior_precision = load_model(repo=REPO, dataset=DATASET, train_data=ds_train)
 
                 wandb_kwargs = {

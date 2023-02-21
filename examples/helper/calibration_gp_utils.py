@@ -113,11 +113,11 @@ def load_model(repo: str, dataset: str, train_data):
     return model, prior_precision
 
 
-def load_data(repo: str, dataset: str):
+def load_data(repo: str, dataset: str, b_train: int = 128, b_test: int = 100):
     if repo == "BNN-preds":
         ds_train, ds_test = get_dataset(dataset, False, 'cuda')
-        train_loader = DataLoader(ds_train, batch_size=128, shuffle=True)
-        test_loader = DataLoader(ds_test, batch_size=100, shuffle=False)
+        train_loader = DataLoader(ds_train, batch_size=b_train, shuffle=True)
+        test_loader = DataLoader(ds_test, batch_size=b_test, shuffle=False)
     elif repo == "Laplace":
         assert dataset == "CIFAR10"
         train_loader = dl.CIFAR10(train=True)
