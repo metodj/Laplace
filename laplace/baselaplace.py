@@ -1183,15 +1183,15 @@ class FunctionalLaplace(BaseLaplace):
 
     def _init_K_MM(self):
         if self.diagonal_kernel:
-            self.K_MM = [torch.zeros(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
+            self.K_MM = [torch.empty(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
         else:
-            self.K_MM = torch.zeros(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
+            self.K_MM = torch.empty(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
 
     def _init_Sigma_inv(self):
         if self.diagonal_kernel:
-            self.Sigma_inv = [torch.zeros(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
+            self.Sigma_inv = [torch.empty(size=(self.M, self.M), device=self._device) for _ in range(self.n_outputs)]
         else:
-            self.Sigma_inv = torch.zeros(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
+            self.Sigma_inv = torch.empty(size=(self.M * self.n_outputs, self.M * self.n_outputs), device=self._device)
 
     def _curv_closure(self, X, y):
         return self.backend.gp_quantities(X, y)
