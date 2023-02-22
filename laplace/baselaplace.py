@@ -358,7 +358,7 @@ class BaseLaplace:
         sigma2 = self.sigma_noise.square()
         return 1 / sigma2 / self.temperature
 
-    def log_marginal_likelihood(self, prior_precision=None, sigma_noise=None):
+    def log_marginal_likelihood(self, prior_precision=None, sigma_noise=None, verbose=False):
         """Compute the Laplace approximation to the log marginal likelihood subject
         to specific Hessian approximations that subclasses implement.
         Requires that the Laplace approximation has been fit before.
@@ -388,6 +388,10 @@ class BaseLaplace:
                 raise ValueError('Can only change sigma_noise for regression.')
             self.sigma_noise = sigma_noise
 
+        if verbose:
+            print("log-likelihood: ", float(self.log_likelihood))
+            print("log-det-term: ", float(self.log_det_term))
+            print("scatter: ", float(self.scatter))
         return self.log_likelihood - 0.5 * (self.log_det_term + self.scatter)
 
     @property
@@ -1471,7 +1475,8 @@ class FunctionalLaplace(BaseLaplace):
         """
         assert pred_type == 'gp'
         if method == 'marglik':
-            warnings.warn('Use of method=\'marglik\' in case of FunctionalLaplace is discouraged, rather use method=\'CV\'.')
+            # warnings.warn('Use of method=\'marglik\' in case of FunctionalLaplace is discouraged, rather use method=\'CV\'.')
+            print('Use of method=\'marglik\' in case of FunctionalLaplace is discouraged, rather use method=\'CV\'.')
         self.optimize_prior_precision_base(pred_type, method, n_steps, lr,
                                            init_prior_prec, val_loader, loss,
                                            log_prior_prec_min, log_prior_prec_max,
